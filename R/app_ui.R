@@ -32,7 +32,6 @@ app_ui <- function(request) {
         # collapsible = TRUE,
         # fluid = TRUE,
         title="Comptes trimestriels",
-        sidebar = sidebar_app(),
         nav_panel_operations(),
         nav_panel_CSI(),
         nav_panel_CB(),

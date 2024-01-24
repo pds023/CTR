@@ -9,6 +9,8 @@
 nav_panel_CSI <- function() {
   return(
     nav_panel("CSI",icon = bs_icon("search"),
+              layout_sidebar(
+                sidebar = sidebar_csi(),
               navset_card_underline(
                 nav_panel(title = "Vue d'ensemble",
                           card(card_header("Éléments clés"),
@@ -25,6 +27,7 @@ nav_panel_CSI <- function() {
                                card_body(DTOutput("donnees_csi")))
                 ),
                 nav_panel(title = "Analyse des révisions")
+              )
               )
     )
 

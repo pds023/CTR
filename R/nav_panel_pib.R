@@ -8,6 +8,8 @@
 #' @examples
 nav_panel_pib <- function() {
   return(nav_panel("PIB",icon = bs_icon("search"),
+                   layout_sidebar(
+                     sidebar = sidebar_pib(),
                    navset_card_underline(
                      nav_panel(title = "Vue d'ensemble",
                                card(card_header("Éléments clés"),
@@ -18,6 +20,7 @@ nav_panel_pib <- function() {
                                     card_body(DTOutput("donnees_pib")))
                      ),
                      nav_panel(title = "Analyse des révisions")
+                   )
                    )
   )
 

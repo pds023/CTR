@@ -18,7 +18,6 @@ Imports:
     highcharter,
     janitor,
     markdown,
-    pkgload,
     rdbnomics,
     rlang,
     RSQLite,
