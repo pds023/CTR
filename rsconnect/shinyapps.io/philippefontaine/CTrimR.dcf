@@ -1,0 +1,12 @@
+name: CTrimR
+title: CTrimR
+username: philippefontaine
+account: philippefontaine
+server: shinyapps.io
+hostUrl: https://api.shinyapps.io/v1
+appId: 11011362
+bundleId: 8176770
+url: https://philippefontaine.shinyapps.io/CTrimR/
+version: 1
+asMultiple: FALSE
+asStatic: FALSE

@@ -1,0 +1,38 @@
+* {
+  min-width: 0;
+  font: inherit;
+}
+
+*, *::before, *::after{
+  box-sizing: border-box;
+}
+
+.action-button:hover {
+  background-color: #007bc2;
+}
+.shiny-download-link:hover {
+  background-color: #007bc2;
+}
+
+@font-face {
+    font-family: 'Marianne';
+    src: url('www/Marianne-Regular.woff') format('woff');
+}
+
+body {
+  margin: 0;
+  font-family: 'Marianne', sans-serif;
+  min-height: 100dvh;
+}
+
+hr {
+    border-top: 1px solid #000000;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  text-wrap: balance;
+}
+
+p {
+  text-wrap: pretty;
+}

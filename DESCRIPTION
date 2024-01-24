@@ -1,0 +1,31 @@
+Package: CTR
+Title: An Amazing Shiny App
+Version: 0.0.0.9000
+Authors@R: 
+    person("firstname", "lastname", , "your@email.com", role = c("aut", "cre"))
+Description: What the package does (one paragraph).
+License: What license is it under?
+Imports: 
+    arrow,
+    bsicons,
+    bslib,
+    config (>= 0.3.2),
+    data.table,
+    DBI,
+    dplyr,
+    DT,
+    golem (>= 0.4.1),
+    highcharter,
+    janitor,
+    markdown,
+    pkgload,
+    rdbnomics,
+    rlang,
+    RSQLite,
+    shiny (>= 1.8.0),
+    shinycssloaders,
+    shinyRatings,
+    shinyWidgets
+Encoding: UTF-8
+LazyData: true
+RoxygenNote: 7.2.3
