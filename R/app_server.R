@@ -9,15 +9,21 @@ app_server <- function(input, output, session) {
 
   data_operations <- reactiveVal()
   data_csi <- reactiveVal()
+  data_cb <- reactiveVal()
+  data_dette <- reactiveVal()
+  data_pib <- reactiveVal()
 
   data_operations(as.data.table(read_parquet("data/operations.parquet")))
   data_csi(as.data.table(read_parquet("data/csi.parquet")))
+  data_cb(as.data.table(read_parquet("data/cb.parquet")))
+  data_dette(as.data.table(read_parquet("data/dette.parquet")))
+  data_pib(as.data.table(read_parquet("data/pib.parquet")))
 
 
 observe({
   req(data_operations())
-  req(data_csi())
-  if(is.null(data_csi()) | is.null(data_operations())){
+  req(data_pib())
+  if(is.null(data_csi()) | is.null(data_operations()) | is.null(data_cb()) | is.null(data_dette()) | is.null(data_pib())){
     return(NULL)
   } else{
     updatePickerInput(session = session,inputId = "operations_secteur",choices = unique(data_operations()[,sect_inst]),
@@ -34,6 +40,24 @@ observe({
     updatePickerInput(session = session,inputId = "csi_compte",choices = unique(data_csi()[,compte]))
     updatePickerInput(session = session,inputId = "csi_operation",choices = unique(data_csi()[,operation]))
     updatePickerInput(session = session,inputId = "csi_correction",choices = unique(data_csi()[,correction]))
+
+    updatePickerInput(session = session,inputId = "cb_operation",choices = unique(data_cb()[,operation]))
+    updatePickerInput(session = session,inputId = "cb_produit",choices = unique(data_cb()[,cna_produit]))
+    updatePickerInput(session = session,inputId = "cb_valorisation",choices = unique(data_cb()[,valorisation]))
+    updatePickerInput(session = session,inputId = "cb_unite",choices = unique(data_cb()[,unit_measure]))
+    updatePickerInput(session = session,inputId = "cb_correction",choices = unique(data_cb()[,correction]))
+
+    updatePickerInput(session = session,inputId = "dette_indicateur",choices = unique(data_dette()[,indicateur]))
+    updatePickerInput(session = session,inputId = "dette_secteur",choices = unique(data_dette()[,sect_inst]))
+    updatePickerInput(session = session,inputId = "dette_instruments",choices = unique(data_dette()[,dette_maastricht_intruments]))
+
+    updatePickerInput(session = session,inputId = "pib_secteur",choices = unique(data_pib()[,sect_inst]))
+    updatePickerInput(session = session,inputId = "pib_operation",choices = unique(data_pib()[,operation]))
+    updatePickerInput(session = session,inputId = "pib_nature",choices = unique(data_pib()[,nature]))
+    updatePickerInput(session = session,inputId = "pib_valorisation",choices = unique(data_pib()[,valorisation]))
+    updatePickerInput(session = session,inputId = "pib_unit",choices = unique(data_pib()[,unit]))
+    updatePickerInput(session = session,inputId = "pib_correction",choices = unique(data_pib()[,correction]))
+
   }
 })
 
@@ -169,7 +193,7 @@ observeEvent(input$operations_reset,{
   }
 })
 
-## Onglet 1 #############################
+## Onglet OPERATIONS #############################
 observe({
   req(input$operations_secteur)
   req(input$operations_operation)
@@ -316,11 +340,250 @@ observe({
 
 
 
+## Onglet CB #############################
+observe({
+  req(input$cb_operation)
+  req(input$cb_produit)
+  req(input$cb_valorisation)
+  req(input$cb_unite)
+  req(input$cb_correction)
+
+  tab <- data_cb()[operation %in% input$cb_operation &
+                      cna_produit %in% input$cb_produit &
+                      valorisation %in% input$cb_valorisation &
+                      unit_measure %in% input$cb_unite &
+                      correction %in% input$cb_correction &
+                      substr(period,1,4) %in% input$date_cb[1]:input$date_cb[2]]
+
+  tab <- tab[order(period)]
+
+  selectize_length <- c(length(input$cb_operation),
+                        length(input$cb_produit),
+                        length(input$cb_valorisation),
+                        length(input$cb_unite),
+                        length(input$cb_correction))
+
+  longueur_superieure_a_un <- function(...) {
+    longueur_plus_grande_1 <- which(lengths(list(...)) > 1)
+    if (length(longueur_plus_grande_1) == 1) {
+      return(names(list(...))[longueur_plus_grande_1])
+    }else if (length(longueur_plus_grande_1) > 1) {
+      return(names(list(...))[longueur_plus_grande_1])
+    }else {
+      return(NULL)
+    }
+  }
+
+  input_long <- longueur_superieure_a_un("operation" = input$cb_operation,
+                                         "cna_produit" = input$cb_produit,
+                                         "valorisation" = input$cb_valorisation,
+                                         "unit_measure" = input$cb_unite,
+                                         "correction" = input$cb_correction)
+
+
+  if(is.null(input_long)){
+    if(input$evol_cb){
+      tab <- tab  %>%
+        arrange(period) %>%
+        mutate(value = (value - lag(value))/lag(value)*100)
+    }
+    output$cb_hc_synth <- renderHighchart({
+      chart <- hchart(
+        tab,
+        "line",
+        hcaes(x = period, y = value)
+      ) %>%
+        hc_xAxis(title = list(text = "Trimestre")) %>%
+        hc_yAxis(title = list(text = input$cb_correction,minorTickInterval = 'auto'))
+      chart
+    })
+  }else if(length(input_long) == 1){
+    if(input$evol_cb){
+      tab <- tab %>%
+        group_by(!!sym(input_long)) %>%
+        arrange(period) %>%
+        mutate(value = (value - lag(value))/lag(value)*100)
+    }
+    output$cb_hc_synth <- renderHighchart({
+      chart <- hchart(
+        tab,
+        "line",
+        hcaes(x = period, y = value, group = !!sym(input_long))
+      ) %>%
+        hc_xAxis(title = list(text = "Trimestre")) %>%
+        hc_yAxis(title = list(text = input$cb_correction,minorTickInterval = 'auto'))
+      chart
+    })
+  }
+})
+
+
+
+
+## Onglet dette #############################
+observe({
+  req(input$dette_indicateur)
+  req(input$dette_secteur)
+  req(input$dette_instruments)
+
+  tab <- data_dette()[indicateur %in% input$dette_indicateur &
+                        sect_inst %in% input$dette_secteur &
+                        dette_maastricht_intruments %in% input$dette_instruments &
+                     substr(period,1,4) %in% input$date_dette[1]:input$date_dette[2]]
+
+  tab <- tab[order(period)]
+
+  selectize_length <- c(length(input$dette_indicateur),
+                        length(input$dette_secteur),
+                        length(input$dette_instruments))
+
+  longueur_superieure_a_un <- function(...) {
+    longueur_plus_grande_1 <- which(lengths(list(...)) > 1)
+    if (length(longueur_plus_grande_1) == 1) {
+      return(names(list(...))[longueur_plus_grande_1])
+    }else if (length(longueur_plus_grande_1) > 1) {
+      return(names(list(...))[longueur_plus_grande_1])
+    }else {
+      return(NULL)
+    }
+  }
+
+  input_long <- longueur_superieure_a_un("indicateur" = input$indicateur,
+                                         "sect_inst" = input$dette_secteur,
+                                         "dette_maastricht_intruments" = input$dette_instruments)
+
+
+  if(is.null(input_long)){
+    if(input$evol_dette){
+      tab <- tab  %>%
+        arrange(period) %>%
+        mutate(value = (value - lag(value))/lag(value)*100)
+    }
+    output$dette_hc_synth <- renderHighchart({
+      chart <- hchart(
+        tab,
+        "line",
+        hcaes(x = period, y = value)
+      ) %>%
+        hc_xAxis(title = list(text = "Trimestre"))
+        # hc_yAxis(title = list(text = input$cb_correction,minorTickInterval = 'auto'))
+      chart
+    })
+  }else if(length(input_long) == 1){
+    if(input$evol_dette){
+      tab <- tab %>%
+        group_by(!!sym(input_long)) %>%
+        arrange(period) %>%
+        mutate(value = (value - lag(value))/lag(value)*100)
+    }
+    output$dette_hc_synth <- renderHighchart({
+      chart <- hchart(
+        tab,
+        "line",
+        hcaes(x = period, y = value, group = !!sym(input_long))
+      ) %>%
+        hc_xAxis(title = list(text = "Trimestre"))
+        # hc_yAxis(title = list(text = input$cb_correction,minorTickInterval = 'auto'))
+      chart
+    })
+  }
+})
+
+
+## Onglet PIB #############################
+observe({
+  req(input$pib_secteur)
+  req(input$pib_operation)
+  req(input$pib_nature)
+  req(input$pib_valorisation)
+  req(input$pib_unit)
+  req(input$pib_correction)
+
+  tab <- data_pib()[sect_inst %in% input$pib_secteur &
+                     operation %in% input$pib_operation &
+                     nature %in% input$pib_nature &
+                     valorisation %in% input$pib_valorisation &
+                     unit %in% input$pib_unit &
+                     correction %in% input$pib_correction &
+                     substr(period,1,4) %in% input$date_pib[1]:input$date_pib[2]]
+
+  tab <- tab[order(period)]
+
+  selectize_length <- c(length(input$pib_secteur),
+                        length(input$pib_operation),
+                        length(input$pib_nature),
+                        length(input$pib_valorisation),
+                        length(input$pib_unit),
+                        length(input$pib_correction))
+
+  longueur_superieure_a_un <- function(...) {
+    longueur_plus_grande_1 <- which(lengths(list(...)) > 1)
+    if (length(longueur_plus_grande_1) == 1) {
+      return(names(list(...))[longueur_plus_grande_1])
+    }else if (length(longueur_plus_grande_1) > 1) {
+      return(names(list(...))[longueur_plus_grande_1])
+    }else {
+      return(NULL)
+    }
+  }
+
+  input_long <- longueur_superieure_a_un("sect_inst" = input$pib_secteur,
+                                         "operation" = input$pib_operation,
+                                         "nature" = input$pib_nature,
+                                         "valorisation" = input$pib_valorisation,
+                                         "unit" = input$pib_unit,
+                                         "correction" = input$pib_correction)
+
+
+  if(is.null(input_long)){
+    if(input$evol_pib){
+      tab <- tab  %>%
+        arrange(period) %>%
+        mutate(value = (value - lag(value))/lag(value)*100)
+    }
+    output$pib_hc_synth <- renderHighchart({
+      chart <- hchart(
+        tab,
+        "line",
+        hcaes(x = period, y = value)
+      ) %>%
+        hc_xAxis(title = list(text = "Trimestre")) %>%
+        hc_yAxis(title = list(text = input$pib_correction,minorTickInterval = 'auto'))
+      chart
+    })
+  }else if(length(input_long) == 1){
+    if(input$evol_pib){
+      tab <- tab %>%
+        group_by(!!sym(input_long)) %>%
+        arrange(period) %>%
+        mutate(value = (value - lag(value))/lag(value)*100)
+    }
+    output$pib_hc_synth <- renderHighchart({
+      chart <- hchart(
+        tab,
+        "line",
+        hcaes(x = period, y = value, group = !!sym(input_long))
+      ) %>%
+        hc_xAxis(title = list(text = "Trimestre")) %>%
+        hc_yAxis(title = list(text = input$pib_correction,minorTickInterval = 'auto'))
+      chart
+    })
+  }
+})
+
+
 
   output$donnees_operations <- create_dt(data_operations(),
                                           cols_names = c("Secteur","Opération","Produit","Valorisation","Valeur","Date"))
   output$donnees_csi <- create_dt(data_csi(),
                                          cols_names = c("Secteur","Compte","Opération","Correction","Valeur","Date"))
+  output$donnees_cb <- create_dt(data_cb(),
+                                  cols_names = c("Opération","Produit","Valo","Unité","Correction","Valeur","Date"))
+  output$donnees_dette <- create_dt(data_dette(),
+                                 cols_names = c("Indicateur","Secteur","Instrument","Valeur","Date"))
+  output$donnees_pib <- create_dt(data_pib(),
+                                 cols_names = c("Secteur","Opération","Nature","Valo",
+                                                "Unité","Correction","Valeur","Date"))
 
 
 }

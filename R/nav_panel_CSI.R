@@ -6,7 +6,7 @@
 #' @export
 #'
 #' @examples
-nav_panel_CSI <- function() {
+nav_panel_csi <- function() {
   return(
     nav_panel("CSI",icon = bs_icon("search"),
               layout_sidebar(
